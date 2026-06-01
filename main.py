@@ -58,8 +58,8 @@ class IntegratedGlobalScraper:
             [out:json][timeout:10];
             area({area_id})->.searchArea;
             (
-              nwr["office"="company"](area.searchArea);
-              nwr["industrial"="factory"](area.searchArea);
+              nwr["office"~"company|distributor"](area.searchArea);
+              nwr["industrial"~"factory|engineering"](area.searchArea);
             );
             out center 10;
             """
@@ -139,8 +139,9 @@ def run_ai_export_bot(search_product, search_location):
         print("\n🧬 Genetik Algoritma ile Lojistik Rota hesaplanıyor...")
         best_route_indices, total_cost = solve_tsp_with_genetic(locations_for_tsp)
         
-        actual_route = list(best_route_indices)
-        route_mapping = {city_idx: rank + 1 for rank, city_idx in enumerate(actual_route)}
+        # Diziyi standart tam sayı listesine dönüştürerek ValueError hatasını engelliyoruz
+        actual_route = [int(x) for x in np.array(best_route_indices).flatten()]
+        route_mapping = {int(city_idx): rank + 1 for rank, city_idx in enumerate(actual_route)}
         
         print("\n====================================================")
         print("🎯 OPTİMİZE EDİLMİŞ KÜRESEL ZİYARET VE SEVKİYAT ROTASI")
@@ -153,7 +154,8 @@ def run_ai_export_bot(search_product, search_location):
             print(f"   -> Web Sitesi: {cust['website']}")
             print("-" * 40)
             
-        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {total_cost:.4f}")
+        final_cost = float(np.array(total_cost).flatten()[0])
+        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
     else:
         print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
 
