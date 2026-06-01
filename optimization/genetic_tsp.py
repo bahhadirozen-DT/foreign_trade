@@ -2,7 +2,7 @@ import random
 import math
 
 def calculate_distance(coord1, coord2):
-    # Tamamen saf Python float tipi ile Öklid mesafesi hesaplama
+    # İki koordinat noktası arasındaki net mesafeyi hesaplar
     return math.sqrt((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2)
 
 def create_distance_matrix(locations):
@@ -20,11 +20,16 @@ def solve_tsp_with_genetic(locations, population_size=40, generations=80):
     def eval_tsp(individual):
         distance = 0.0
         for i in range(len(individual) - 1):
-            distance += dist_matrix[individual[i]][individual[i+1]]
-        distance += dist_matrix[individual[-1]][individual]
+            # İndekslerin kesinlikle int olduğundan emin oluyoruz
+            idx1 = int(individual[i])
+            idx2 = int(individual[i+1])
+            distance += dist_matrix[idx1][idx2]
+        
+        # Başlangıç noktasına geri dönüş maliyeti
+        distance += dist_matrix[int(individual[-1])][int(individual[0])]
         return distance
 
-    # 1. Başlangıç popülasyonunu oluşturma
+    # Başlangıç popülasyonunu oluşturma
     population = []
     for _ in range(population_size):
         ind = list(range(num_cities))
@@ -33,16 +38,13 @@ def solve_tsp_with_genetic(locations, population_size=40, generations=80):
         
     # Evrim Döngüsü
     for _ in range(generations):
-        # Popülasyonu maliyete göre sıralama
         population = sorted(population, key=lambda x: eval_tsp(x))
-        new_population = population[:2] # Elitizm: En iyi 2 rotayı koru
+        new_population = population[:2] # En iyi 2 rotayı koru
         
         while len(new_population) < population_size:
-            # Turnuva Seçimi
             parent1 = min(random.sample(population, 3), key=lambda x: eval_tsp(x))
             parent2 = min(random.sample(population, 3), key=lambda x: eval_tsp(x))
             
-            # Sıralı Çaprazlama (Ordered Crossover)
             size = len(parent1)
             start, end = sorted(random.sample(range(size), 2))
             child = [-1] * size
@@ -55,7 +57,6 @@ def solve_tsp_with_genetic(locations, population_size=40, generations=80):
                         pointer += 1
                     child[pointer] = item
             
-            # Mutasyon (%15 ihtimalle iki şehrin yerini değiştir)
             if random.random() < 0.15:
                 idx1, idx2 = random.sample(range(num_cities), 2)
                 child[idx1], child[idx2] = child[idx2], child[idx1]
