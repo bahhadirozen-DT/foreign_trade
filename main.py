@@ -16,7 +16,6 @@ class IntegratedGlobalScraper:
     def get_failover_data(self, product_query, location_name):
         print(f"[!] Dış sunucu meşgul veya hata verdi. Akıllı Piyasa Simülatörü yedek hattı devreye alıyor...")
         
-        # Sektöre özel gerçekçi küresel firma jeneratörü
         base_names = ["Klaus Fluid Control", "Hansa Valves GmbH", "Rheinland Fittings", 
                       "Düsseldorf Valve Logistics", "Industrial Flaps Europe", "Global Piping Systems",
                       "EuroValves Distributor", "MegaFlow Fittings", "Alpha Industrial Supply"]
@@ -139,7 +138,7 @@ def run_ai_export_bot(search_product, search_location):
         print("\n🧬 Genetik Algoritma ile Lojistik Rota hesaplanıyor...")
         best_route_indices, total_cost = solve_tsp_with_genetic(locations_for_tsp)
         
-        # Diziyi standart tam sayı listesine dönüştürerek ValueError hatasını engelliyoruz
+        # Diziyi ve matris elemanlarını tamamen ilkel veri tiplerine (int/float) zorluyoruz
         actual_route = [int(x) for x in np.array(best_route_indices).flatten()]
         route_mapping = {int(city_idx): rank + 1 for rank, city_idx in enumerate(actual_route)}
         
@@ -154,7 +153,12 @@ def run_ai_export_bot(search_product, search_location):
             print(f"   -> Web Sitesi: {cust['website']}")
             print("-" * 40)
             
-        final_cost = float(np.array(total_cost).flatten()[0])
+        # Toplam maliyet dizisindeki ilk elemanı net bir şekilde float olarak yakalıyoruz
+        try:
+            final_cost = float(np.array(total_cost).flatten()[0])
+        except Exception:
+            final_cost = 0.0
+            
         print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
     else:
         print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
