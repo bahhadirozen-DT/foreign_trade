@@ -41,3 +41,8 @@ jobs:
           PROJECT_NUMBER: ${{ github.event.inputs.proje_no }}
         run: python main.py
 
+      - name: Excel Raporunu Indirilebilir Yap
+        uses: actions/upload-artifact@v4
+        with:
+          name: dis-ticaret-excel-raporu
+          path: dis_ticaret_raporu.xlsx
