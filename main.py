@@ -203,24 +203,51 @@ def run_ai_export_bot(search_product, search_location):
                 "Enlem (Lat)": cust['lat'],
                 "Boylam (Lng)": cust['lng']
             })
-       df = pd.DataFrame(excel_data)
-df = df.sort_values(by="Rota Sırası (Durak)")
+            import os
+import numpy as np
+import pandas as pd
 
-# Excel'e aktarma ve çıktı alma işlemleri
-df.to_excel("dis_ticaret_raporu.xlsx", index=False)
-print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
+def run_ai_export_bot_segment(verified_customers, route_mapping, total_cost):
+    """
+    Görseldeki kod parçasının ait olduğu fonksiyonun (run_ai_export_bot) 
+    DataFrame oluşturma, Excel'e yazma ve maliyet hesaplama adımları.
+    """
+    excel_data = []
+    for idx, cust in enumerate(verified_customers):
+        rank = route_mapping.get(idx, 99)
+        excel_data.append({
+            "Rota Sırası (Durak)": rank,
+            "Firma Adı": cust['name'],
+            "Pazar Risk Skoru": round(cust['market_risk_score'], 4),
+            # Orijinal kod tabanında yuvarlama virgülden sonra 2 basamak olarak güncellenmiş
+            "Görsel Eşleşme Skoru %": round(cust['visual_match_score'] * 100, 2),
+            "Web Sitesi": cust['website'],
+            "Telefon": cust['phone'],
+            "Adres": cust['address'],
+            "Enlem (Lat)": cust['lat'],
+            "Boylam (Lng)": cust['lng']
+        })
 
-# Maliyet hesaplama kontrolü
-try:
-    final_cost = float(np.array(total_cost).flatten()[0])
-    print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
-except Exception:
-    final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
-    print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
+    df = pd.DataFrame(excel_data)
+    df = df.sort_values(by="Rota Sırası (Durak)")
 
-# Ana program tetikleyicisi
+    # Excel'e aktarma ve çıktı alma işlemleri
+    df.to_excel("dis_ticaret_raporu.xlsx", index=False)
+    print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
+
+    # Maliyet hesaplama kontrolü (İndis hatası düzeltildi)
+    try:
+        final_cost = float(np.array(total_cost).flatten()[0])
+        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
+    except Exception:
+        final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
+        print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
+
+# Fonksiyonların tetiklendiği ana gövde
 if __name__ == "__main__":
     search_product = os.getenv("SEARCH_PRODUCT", "industrial valves")
     search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
-    run_ai_export_bot(search_product, search_location)
+    # Orijinal mimaride bot bu noktadan tetiklenmektedir:
+    # run_ai_export_bot(search_product, search_location)
+
