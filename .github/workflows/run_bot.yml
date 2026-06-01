@@ -19,6 +19,7 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
       - name: Kodlari Cek
         uses: actions/checkout@v4
@@ -39,18 +40,21 @@ jobs:
           SEARCH_PRODUCT: ${{ github.event.inputs.urun_adi }}
           SEARCH_LOCATION: ${{ github.event.inputs.lokasyon }}
           PROJECT_NUMBER: ${{ github.event.inputs.proje_no }}
+          # Renkli emojilerin ve logların Actions üzerinde düzgün görünmesi için:
+          PYTHONUNBUFFERED: "1" 
         run: python main.py
 
       - name: Excel Raporunu Indirilebilir Yap
         uses: actions/upload-artifact@v4
         with:
           name: dis-ticaret-excel-raporu
-          path: dis_ticaret_raporu.xlsx
+          path: "**/dis_ticaret_raporu.xlsx"
 
       # 🌍 YENİ ADIM: Dünya çapındaki interaktif haritayı çıktı olarak ekliyoruz
       - name: Canli B2B Haritasini Indirilebilir Yap
         uses: actions/upload-artifact@v4
         with:
           name: schekur-b2b-global-harita
-          path: schekur_global_b2b_map.html
+          path: "**/schekur_global_b2b_map.html"
+
 
