@@ -3,6 +3,7 @@ import json
 import requests
 import random
 import numpy as np
+import pandas as pd
 from geopy.geocoders import Nominatim
 from image_processing.visual_matcher import VisualProductMatcher
 from mathematics.stability_analysis import MarketStabilityAnalysis
@@ -132,15 +133,12 @@ def run_ai_export_bot(search_product, search_location):
         customer["is_market_stable"] = market_metrics["is_stable"]
         
         verified_customers.append(customer)
-        # Koordinatları kesinlikle (lat, lng) şeklinde birer sayı çifti (tuple) olarak listeye ekliyoruz
         locations_for_tsp.append((float(customer["lat"]), float(customer["lng"])))
 
     if len(locations_for_tsp) > 1:
         print("\n🧬 Genetik Algoritma ile Lojistik Rota hesaplanıyor...")
         
-        # Saf Python fonksiyonunu güvenle çağırıyoruz
         best_route_indices, total_cost = solve_tsp_with_genetic(locations_for_tsp)
-        
         route_mapping = {int(city_idx): rank + 1 for rank, city_idx in enumerate(best_route_indices)}
         
         print("\n====================================================")
@@ -154,7 +152,33 @@ def run_ai_export_bot(search_product, search_location):
             print(f"   -> Web Sitesi: {cust['website']}")
             print("-" * 40)
             
-        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {total_cost:.4f}")
+        # EXCEL RAPORLAMA DOSYASININ OLUŞTURULMASI
+        excel_data = []
+        for idx, cust in enumerate(verified_customers):
+            rank = route_mapping.get(idx, 99)
+            excel_data.append({
+                "Rota Sırası (Durak)": rank,
+                "Firma Adı": cust['name'],
+                "Pazar Risk Skoru": round(cust['market_risk_score'], 4),
+                "Görsel Eşleşme Skoru %": round(cust['visual_match_score'] * 100, 2),
+                "Web Sitesi": cust['website'],
+                "Telefon": cust['phone'],
+                "Adres": cust['address'],
+                "Enlem (Lat)": cust['lat'],
+                "Boylam (Lng)": cust['lng']
+            })
+            
+        df = pd.DataFrame(excel_data)
+        df = df.sort_values(by="Rota Sırası (Durak)")
+        df.to_excel("dis_ticaret_raporu.xlsx", index=False)
+        print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
+            
+        try:
+            final_cost = float(np.array(total_cost).flatten()[0])
+        except Exception:
+            final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
+            
+        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
     else:
         print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
 
@@ -163,3 +187,4 @@ if __name__ == "__main__":
     search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
     run_ai_export_bot(search_product, search_location)
+
