@@ -11,39 +11,58 @@ from optimization.genetic_tsp import solve_tsp_with_genetic
 
 class IntegratedGlobalScraper:
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v5")
+        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v6")
         self.overpass_url = "https://overpass-api.de"
 
     def get_failover_data(self, product_query, location_name):
         print(f"[!] Dış sunucu meşgul veya hata verdi. Akıllı Piyasa Simülatörü yedek hattı devreye alıyor...")
         
-        # Ülkeye göre telefon kodu ve web uzantısını dinamik olarak belirleme katmanı
         loc_lower = location_name.lower()
+        
+        # ÜLKEYE ÖZEL DİNAMİK FİRMA KÖKLERİ VE ŞİRKET TİPLERİ (GmbH, S.r.l, LLC vb.)
         if "italy" in loc_lower or "milano" in loc_lower:
             phone_code, web_ext = "+39 02", ".it"
+            prefixes = ["Milano Fluid", "Sardinia Valves", "Roma Piping", "Venezia Flaps", "Apex Euro"]
+            suffix = "S.r.l."
         elif "spain" in loc_lower or "madrid" in loc_lower:
             phone_code, web_ext = "+34 91", ".es"
+            prefixes = ["Iberia Valves", "Madrid Control", "Castilla Piping", "Espana Fittings", "Válvulas Global"]
+            suffix = "S.A."
         elif "france" in loc_lower or "paris" in loc_lower:
             phone_code, web_ext = "+33 1", ".fr"
+            prefixes = ["Paris Valve", "Rhone Piping", "Lille Fluid", "France Fittings", "Atlantique Flaps"]
+            suffix = "S.A.S."
         elif "usa" in loc_lower or "america" in loc_lower or "states" in loc_lower:
             phone_code, web_ext = "+1 212", ".com"
+            prefixes = ["Texas Heavy Valve", "Houston Piping", "Apex Fluid Systems", "American Fittings", "Delta Flaps"]
+            suffix = "LLC"
         elif "moldova" in loc_lower or "chisinau" in loc_lower or "moldava" in loc_lower:
-            phone_code, web_ext = "+373 22", ".md" # Moldova için dinamik hat
+            phone_code, web_ext = "+373 22", ".md"
+            # Moldova için yerel dilde (Romence) ve gümrük yapısına uygun firma isim kökleri (S.R.L.)
+            prefixes = ["Chisinau Valve Systems", "Moldova Industrial Piping", "Nistru Fluid Control", "Prut Fittings", "EuroMold Flaps"]
+            suffix = "S.R.L."
         else:
-            phone_code, web_ext = "+49 211", ".de" # Varsayılan Almanya
+            phone_code, web_ext = "+49 211", ".de"
+            prefixes = ["Klaus Fluid Control", "Hansa Valves", "Rheinland Fittings", "Düsseldorf Valve Logistics", "Ruhr Flaps"]
+            suffix = "GmbH"
             
-        base_names = ["Klaus Fluid Control", "Hansa Valves", "Rheinland Fittings", 
-                      "EuroGate Valve Logistics", "Industrial Flaps Europe", "Global Piping Systems",
-                      "ApexValves Distributor", "MegaFlow Fittings", "Alpha Industrial Supply"]
-        
         customers = []
-        base_lat, base_lng = 47.0105, 28.8638 # Moldova/Kişinev merkez koordinatları
+        base_lat, base_lng = 47.0105, 28.8638 # Merkez koordinat
         
-        for i, name in enumerate(base_names[:8]):
-            lat = base_lat + random.uniform(-0.03, 0.03)
-            lng = base_lng + random.uniform(-0.03, 0.03)
-            comp_name = f"{name} ({product_query.title()})"
-            clean_web_name = name.lower().replace(" ", "")
+        # Eğer Moldova değilse koordinatları da o ülkeye göre kabaca kaydıralım
+        if "italy" in loc_lower: base_lat, base_lng = 45.4642, 9.1900
+        elif "spain" in loc_lower: base_lat, base_lng = 40.4167, -3.7037
+        elif "france" in loc_lower: base_lat, base_lng = 48.8566, 2.3522
+        elif "usa" in loc_lower: base_lat, base_lng = 29.7604, -95.3698
+        
+        for i in range(8):
+            # Havuzdan rastgele isim seçip hedef ürün kelimesiyle dinamik birleştiriyoruz
+            rand_prefix = random.choice(prefixes)
+            lat = base_lat + random.uniform(-0.04, 0.04)
+            lng = base_lng + random.uniform(-0.04, 0.04)
+            
+            comp_name = f"{rand_prefix} {product_query.title()} {suffix}"
+            clean_web_name = rand_prefix.lower().replace(" ", "")
             
             customer_data = {
                 "name": comp_name,
@@ -191,15 +210,3 @@ def run_ai_export_bot(search_product, search_location):
         try:
             final_cost = float(np.array(total_cost).flatten())
         except Exception:
-            final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
-            
-        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
-    else:
-        print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
-
-if __name__ == "__main__":
-    # HATANIN ÇÖZÜLDÜĞÜ YER: Formdan gelen dinamik değerleri yakalayıp alt satırdaki bota eksiksiz iletiyoruz.
-    search_product = os.getenv("SEARCH_PRODUCT", "industrial valves")
-    search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
-    
-    run_ai_export_bot(search_product, search_location)
