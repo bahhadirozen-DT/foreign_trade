@@ -203,31 +203,24 @@ def run_ai_export_bot(search_product, search_location):
                 "Enlem (Lat)": cust['lat'],
                 "Boylam (Lng)": cust['lng']
             })
-            
-        df = pd.DataFrame(excel_data)
-        df = df.sort_values(by="Rota Sırası (Durak)")
-        df.to_excel("dis_ticaret_raporu.xlsx", index=False)
-        print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
-       
-        df = pd.DataFrame(excel_data)
-        df = df.sort_values(by="Rota Sırası (Durak)")
-        df.to_excel("dis_ticaret_raporu.xlsx", index=False)
-        print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
-            
-        try:
-            final_cost = float(np.array(total_cost).flatten())
-        except Exception:
-            final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
-            
-        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
-    else:
-        print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
+       df = pd.DataFrame(excel_data)
+df = df.sort_values(by="Rota Sırası (Durak)")
 
+# Excel'e aktarma ve çıktı alma işlemleri
+df.to_excel("dis_ticaret_raporu.xlsx", index=False)
+print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
+
+# Maliyet hesaplama kontrolü
+try:
+    final_cost = float(np.array(total_cost).flatten()[0])
+    print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
+except Exception:
+    final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
+    print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
+
+# Ana program tetikleyicisi
 if __name__ == "__main__":
     search_product = os.getenv("SEARCH_PRODUCT", "industrial valves")
     search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
     run_ai_export_bot(search_product, search_location)
-
-
-
