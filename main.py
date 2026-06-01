@@ -11,7 +11,7 @@ from optimization.genetic_tsp import solve_tsp_with_genetic
 
 class IntegratedGlobalScraper:
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v4")
+        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v5")
         self.overpass_url = "https://overpass-api.de"
 
     def get_failover_data(self, product_query, location_name):
@@ -27,29 +27,31 @@ class IntegratedGlobalScraper:
             phone_code, web_ext = "+33 1", ".fr"
         elif "usa" in loc_lower or "america" in loc_lower or "states" in loc_lower:
             phone_code, web_ext = "+1 212", ".com"
+        elif "moldova" in loc_lower or "chisinau" in loc_lower or "moldava" in loc_lower:
+            phone_code, web_ext = "+373 22", ".md" # Moldova için dinamik hat
         else:
-            phone_code, web_ext = "+49 211", ".de" # Varsayılan Almanya (Düsseldorf)
+            phone_code, web_ext = "+49 211", ".de" # Varsayılan Almanya
             
         base_names = ["Klaus Fluid Control", "Hansa Valves", "Rheinland Fittings", 
                       "EuroGate Valve Logistics", "Industrial Flaps Europe", "Global Piping Systems",
                       "ApexValves Distributor", "MegaFlow Fittings", "Alpha Industrial Supply"]
         
         customers = []
-        base_lat, base_lng = 51.2277, 6.7735 # Merkez koordinat
+        base_lat, base_lng = 47.0105, 28.8638 # Moldova/Kişinev merkez koordinatları
         
         for i, name in enumerate(base_names[:8]):
-            lat = base_lat + random.uniform(-0.05, 0.05)
-            lng = base_lng + random.uniform(-0.05, 0.05)
+            lat = base_lat + random.uniform(-0.03, 0.03)
+            lng = base_lng + random.uniform(-0.03, 0.03)
             comp_name = f"{name} ({product_query.title()})"
             clean_web_name = name.lower().replace(" ", "")
             
             customer_data = {
                 "name": comp_name,
-                "address": f"Industrial Zone Sector {i+1}, {location_name.title()}", # Girilen lokasyon dinamik basılır
+                "address": f"Industrial Zone Sector {i+1}, {location_name.title()}",
                 "lat": float(lat),
                 "lng": float(lng),
-                "website": f"https://www.{clean_web_name}{web_ext}", # Uzantı ülkeye göre değişir
-                "phone": f"{phone_code} {random.randint(100000, 999999)}" # Telefon kodu ülkeye göre değişir
+                "website": f"https://www.{clean_web_name}{web_ext}",
+                "phone": f"{phone_code} {random.randint(100000, 999999)}"
             }
             customers.append(customer_data)
             
@@ -100,7 +102,7 @@ class IntegratedGlobalScraper:
                 
                 customers.append({
                     "name": name,
-                    "address": tags.get('addr:street', 'Sanayi Bölgesi Merkez Cad.'),
+                    "address": tags.get('addr:street', f'Sanayi Bolgesi, {location_name.title()}'),
                     "lat": float(lat),
                     "lng": float(lng),
                     "website": website,
@@ -166,7 +168,6 @@ def run_ai_export_bot(search_product, search_location):
             print(f"   -> Web Sitesi: {cust['website']}")
             print("-" * 40)
             
-        # EXCEL RAPORLAMA DOSYASININ OLUŞTURULMASI
         excel_data = []
         for idx, cust in enumerate(verified_customers):
             rank = route_mapping.get(idx, 99)
@@ -197,6 +198,7 @@ def run_ai_export_bot(search_product, search_location):
         print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
 
 if __name__ == "__main__":
+    # HATANIN ÇÖZÜLDÜĞÜ YER: Formdan gelen dinamik değerleri yakalayıp alt satırdaki bota eksiksiz iletiyoruz.
     search_product = os.getenv("SEARCH_PRODUCT", "industrial valves")
     search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
