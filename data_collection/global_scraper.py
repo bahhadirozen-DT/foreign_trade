@@ -30,14 +30,12 @@ class FreeMapScraper:
             # Küresel Genel Sorgu: Yazılan ürün kelimesini, hedef ülkedeki 
             # tüm endüstriyel tesisler, fabrikalar, distribütörler ve ticari şirketler içinde arar.
             overpass_query = f"""
-            [out:json][timeout:50];
+            [out:json][timeout:30];
             area({area_id})->.searchArea;
             (
-              nwr["office"](area.searchArea);
-              nwr["industrial"](area.searchArea);
-              nwr["commercial"](area.searchArea);
+              nwr["office"="company"](area.searchArea);
+              nwr["industrial"="factory"](area.searchArea);
               nwr["company"](area.searchArea);
-              nwr["manufacturer"](area.searchArea);
             );
             out center;
             """
