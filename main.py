@@ -10,7 +10,7 @@ from optimization.genetic_tsp import solve_tsp_with_genetic
 
 class IntegratedGlobalScraper:
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v3")
+        self.geolocator = Nominatim(user_agent="global_foreign_trade_intelligence_bot_final_v4")
         self.overpass_url = "https://overpass-api.de"
 
     def get_failover_data(self, product_query, location_name):
@@ -132,15 +132,16 @@ def run_ai_export_bot(search_product, search_location):
         customer["is_market_stable"] = market_metrics["is_stable"]
         
         verified_customers.append(customer)
-        locations_for_tsp.append((customer["lat"], customer["lng"]))
+        # Koordinatları kesinlikle (lat, lng) şeklinde birer sayı çifti (tuple) olarak listeye ekliyoruz
+        locations_for_tsp.append((float(customer["lat"]), float(customer["lng"])))
 
     if len(locations_for_tsp) > 1:
         print("\n🧬 Genetik Algoritma ile Lojistik Rota hesaplanıyor...")
+        
+        # Saf Python fonksiyonunu güvenle çağırıyoruz
         best_route_indices, total_cost = solve_tsp_with_genetic(locations_for_tsp)
         
-        # Diziyi ve matris elemanlarını tamamen ilkel veri tiplerine (int/float) zorluyoruz
-        actual_route = [int(x) for x in np.array(best_route_indices).flatten()]
-        route_mapping = {int(city_idx): rank + 1 for rank, city_idx in enumerate(actual_route)}
+        route_mapping = {int(city_idx): rank + 1 for rank, city_idx in enumerate(best_route_indices)}
         
         print("\n====================================================")
         print("🎯 OPTİMİZE EDİLMİŞ KÜRESEL ZİYARET VE SEVKİYAT ROTASI")
@@ -153,18 +154,12 @@ def run_ai_export_bot(search_product, search_location):
             print(f"   -> Web Sitesi: {cust['website']}")
             print("-" * 40)
             
-        # Toplam maliyet dizisindeki ilk elemanı net bir şekilde float olarak yakalıyoruz
-        try:
-            final_cost = float(np.array(total_cost).flatten()[0])
-        except Exception:
-            final_cost = 0.0
-            
-        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {final_cost:.4f}")
+        print(f"\n[✓] Tüm süreç başarıyla tamamlandı. Toplam Maliyet Katsayısı: {total_cost:.4f}")
     else:
         print("\n[-] Rota optimizasyonu için yeterli lokasyon doğrulanamadı.")
 
 if __name__ == "__main__":
     search_product = os.getenv("SEARCH_PRODUCT", "industrial valves")
-    search_location = os.getenv("SEARCH_LOCATION", "Dusseldorf, Germany")
+    search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
     run_ai_export_bot(search_product, search_location)
