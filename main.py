@@ -2,7 +2,7 @@ import json
 import numpy as np
 # Yazdığımız modülleri içe aktarıyoruz
 from data_collection.google_maps_scraper import GoogleMapsScraper
-from image_processing.visual_matcher.py import VisualProductMatcher
+from image_processing.visual_matcher import VisualProductMatcher
 from mathematics.stability_analysis import MarketStabilityAnalysis
 from optimization.genetic_tsp import solve_tsp_with_genetic
 
