@@ -1,16 +1,13 @@
 import random
-import numpy as np
-try:
-    from deap import base, creator, tools, algorithms
-except ImportError:
-    pass
+import math
 
 def calculate_distance(coord1, coord2):
-    return float(np.linalg.norm(np.array(coord1) - np.array(coord2)))
+    # Tamamen saf Python float tipi ile Öklid mesafesi hesaplama
+    return math.sqrt((coord1[0] - coord2[0])**2 + (coord1[1] - coord2[1])**2)
 
 def create_distance_matrix(locations):
     num_points = len(locations)
-    matrix = np.zeros((num_points, num_points))
+    matrix = [[0.0 for _ in range(num_points)] for _ in range(num_points)]
     for i in range(num_points):
         for j in range(num_points):
             matrix[i][j] = calculate_distance(locations[i], locations[j])
@@ -20,41 +17,53 @@ def solve_tsp_with_genetic(locations, population_size=40, generations=80):
     num_cities = len(locations)
     dist_matrix = create_distance_matrix(locations)
     
-    # DEAP çakışmalarını engellemek için try-except bloğu kullanıyoruz
-    try:
-        if not hasattr(creator, "FitnessMin"):
-            creator.create("FitnessMin", base.Fitness, weights=(-1.0,))
-        if not hasattr(creator, "Individual"):
-            creator.create("Individual", list, fitness=creator.FitnessMin)
-    except Exception:
-        # Eğer nesneler zaten varsa hata vermesini önleyip geçiyoruz
-        pass
-
-    toolbox = base.Toolbox()
-    toolbox.register("indices", random.sample, range(num_cities), num_cities)
-    toolbox.register("individual", tools.initIterate, creator.Individual, toolbox.indices)
-    toolbox.register("population", tools.initRepeat, list, toolbox.individual)
-
-    def evalTSP(individual):
+    def eval_tsp(individual):
         distance = 0.0
         for i in range(len(individual) - 1):
-            distance += float(dist_matrix[individual[i]][individual[i+1]])
-        distance += float(dist_matrix[individual[-1]][individual[0]])
-        return (distance,)
+            distance += dist_matrix[individual[i]][individual[i+1]]
+        distance += dist_matrix[individual[-1]][individual]
+        return distance
 
-    toolbox.register("evaluate", evalTSP)
-    toolbox.register("mate", tools.cxOrdered)
-    toolbox.register("mutate", tools.mutShuffleIndexes, indpb=0.05)
-    toolbox.register("select", tools.selTournament, tournsize=3)
+    # 1. Başlangıç popülasyonunu oluşturma
+    population = []
+    for _ in range(population_size):
+        ind = list(range(num_cities))
+        random.shuffle(ind)
+        population.append(ind)
+        
+    # Evrim Döngüsü
+    for _ in range(generations):
+        # Popülasyonu maliyete göre sıralama
+        population = sorted(population, key=lambda x: eval_tsp(x))
+        new_population = population[:2] # Elitizm: En iyi 2 rotayı koru
+        
+        while len(new_population) < population_size:
+            # Turnuva Seçimi
+            parent1 = min(random.sample(population, 3), key=lambda x: eval_tsp(x))
+            parent2 = min(random.sample(population, 3), key=lambda x: eval_tsp(x))
+            
+            # Sıralı Çaprazlama (Ordered Crossover)
+            size = len(parent1)
+            start, end = sorted(random.sample(range(size), 2))
+            child = [-1] * size
+            child[start:end] = parent1[start:end]
+            
+            pointer = 0
+            for item in parent2:
+                if item not in child:
+                    while child[pointer] != -1:
+                        pointer += 1
+                    child[pointer] = item
+            
+            # Mutasyon (%15 ihtimalle iki şehrin yerini değiştir)
+            if random.random() < 0.15:
+                idx1, idx2 = random.sample(range(num_cities), 2)
+                child[idx1], child[idx2] = child[idx2], child[idx1]
+                
+            new_population.append(child)
+        population = new_population
 
-    pop = toolbox.population(n=population_size)
-    algorithms.eaSimple(pop, toolbox, cxpb=0.7, mutpb=0.2, ngen=generations, verbose=False)
+    best_route = min(population, key=lambda x: eval_tsp(x))
+    best_fitness = float(eval_tsp(best_route))
     
-    best_ind = tools.selBest(pop, 1)[0]
-    
-    # Çıktıları ilkel Python tiplerine (list ve float) zorlayarak main.py'yi rahatlatıyoruz
-    route_out = [int(x) for x in best_ind]
-    fitness_out = float(best_ind.fitness.values[0])
-    
-    return route_out, fitness_out
-
+    return [int(x) for x in best_route], best_fitness
