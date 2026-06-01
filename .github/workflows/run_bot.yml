@@ -1,7 +1,16 @@
 name: Akilli Dis Ticaret Botunu Calistir
 
 on:
-  workflow_dispatch: # Bu satır internet arayüzüne "Buton" ekler
+  workflow_dispatch:
+    inputs:
+      urun_adi:
+        description: 'Aranacak Ürün / Sektör Kelimesi (İngilizce önerilir)'
+        required: true
+        default: 'industrial valves distributor'
+      lokasyon:
+        description: 'Hedef Şehir ve Ülke'
+        required: true
+        default: 'Dusseldorf, Germany'
 
 jobs:
   run-bot:
@@ -23,4 +32,7 @@ jobs:
       - name: Botu Tetikle
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          SEARCH_PRODUCT: ${{ github.event.inputs.urun_adi }}
+          SEARCH_LOCATION: ${{ github.event.inputs.lokasyon }}
         run: python main.py
+
