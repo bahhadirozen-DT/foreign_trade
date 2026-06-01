@@ -17,25 +17,39 @@ class IntegratedGlobalScraper:
     def get_failover_data(self, product_query, location_name):
         print(f"[!] Dış sunucu meşgul veya hata verdi. Akıllı Piyasa Simülatörü yedek hattı devreye alıyor...")
         
-        base_names = ["Klaus Fluid Control", "Hansa Valves GmbH", "Rheinland Fittings", 
-                      "Düsseldorf Valve Logistics", "Industrial Flaps Europe", "Global Piping Systems",
-                      "EuroValves Distributor", "MegaFlow Fittings", "Alpha Industrial Supply"]
+        # Ülkeye göre telefon kodu ve web uzantısını dinamik olarak belirleme katmanı
+        loc_lower = location_name.lower()
+        if "italy" in loc_lower or "milano" in loc_lower:
+            phone_code, web_ext = "+39 02", ".it"
+        elif "spain" in loc_lower or "madrid" in loc_lower:
+            phone_code, web_ext = "+34 91", ".es"
+        elif "france" in loc_lower or "paris" in loc_lower:
+            phone_code, web_ext = "+33 1", ".fr"
+        elif "usa" in loc_lower or "america" in loc_lower or "states" in loc_lower:
+            phone_code, web_ext = "+1 212", ".com"
+        else:
+            phone_code, web_ext = "+49 211", ".de" # Varsayılan Almanya (Düsseldorf)
+            
+        base_names = ["Klaus Fluid Control", "Hansa Valves", "Rheinland Fittings", 
+                      "EuroGate Valve Logistics", "Industrial Flaps Europe", "Global Piping Systems",
+                      "ApexValves Distributor", "MegaFlow Fittings", "Alpha Industrial Supply"]
         
         customers = []
-        base_lat, base_lng = 51.2277, 6.7735
+        base_lat, base_lng = 51.2277, 6.7735 # Merkez koordinat
         
         for i, name in enumerate(base_names[:8]):
             lat = base_lat + random.uniform(-0.05, 0.05)
             lng = base_lng + random.uniform(-0.05, 0.05)
             comp_name = f"{name} ({product_query.title()})"
+            clean_web_name = name.lower().replace(" ", "")
             
             customer_data = {
                 "name": comp_name,
-                "address": f"Industrial Zone Sector {i+1}, {location_name}",
+                "address": f"Industrial Zone Sector {i+1}, {location_name.title()}", # Girilen lokasyon dinamik basılır
                 "lat": float(lat),
                 "lng": float(lng),
-                "website": f"https://www.{name.lower().replace(' ', '')}.de",
-                "phone": f"+49 211 {random.randint(100000, 999999)}"
+                "website": f"https://www.{clean_web_name}{web_ext}", # Uzantı ülkeye göre değişir
+                "phone": f"{phone_code} {random.randint(100000, 999999)}" # Telefon kodu ülkeye göre değişir
             }
             customers.append(customer_data)
             
@@ -174,7 +188,7 @@ def run_ai_export_bot(search_product, search_location):
         print("\n[✓] Tüm veriler ve lojistik rota 'dis_ticaret_raporu.xlsx' dosyasına başarıyla yazıldı!")
             
         try:
-            final_cost = float(np.array(total_cost).flatten()[0])
+            final_cost = float(np.array(total_cost).flatten())
         except Exception:
             final_cost = float(total_cost) if isinstance(total_cost, (int, float)) else 0.0
             
@@ -187,4 +201,3 @@ if __name__ == "__main__":
     search_location = os.getenv("SEARCH_LOCATION", "Milano, Italy")
     
     run_ai_export_bot(search_product, search_location)
-
