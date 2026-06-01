@@ -8,7 +8,7 @@ on:
         required: true
         default: 'industrial valves'
       lokasyon:
-        description: 'Hedef Şehir ve Ülke'
+        description: 'Hedef Şehir ve Ülke (Dünya çapı için global yazın)'
         required: true
         default: 'Milano, Italy'
       proje_no:
@@ -46,3 +46,11 @@ jobs:
         with:
           name: dis-ticaret-excel-raporu
           path: dis_ticaret_raporu.xlsx
+
+      # 🌍 YENİ ADIM: Dünya çapındaki interaktif haritayı çıktı olarak ekliyoruz
+      - name: Canli B2B Haritasini Indirilebilir Yap
+        uses: actions/upload-artifact@v4
+        with:
+          name: schekur-b2b-global-harita
+          path: schekur_global_b2b_map.html
+
